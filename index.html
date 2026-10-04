@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mitoshi Editor</title>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #050505;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        /* ================= FUNDO ================= */
+
+        .bg-animado {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .out-top {
+            animation: rotate 20s linear infinite;
+            transform-origin: 13px 25px;
+        }
+
+        .in-top {
+            animation: rotate 10s linear infinite;
+            transform-origin: 13px 25px;
+        }
+
+        .out-bottom {
+            animation: rotate 25s linear infinite;
+            transform-origin: 84px 93px;
+        }
+
+        .in-bottom {
+            animation: rotate 15s linear infinite;
+            transform-origin: 84px 93px;
+        }
+
+
+        /* ================= TOPO ================= */
+
+        header {
+            height: 64px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 20px;
+
+            background: rgba(8, 8, 8, 0.92);
+            backdrop-filter: blur(15px);
+
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            color: #00f5d4;
+
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .logo svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+
+        /* ================= BOTÃO ================= */
+
+        .Btn {
+            position: relative;
+
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+
+            width: 110px;
+            height: 40px;
+
+            border: none;
+
+            padding: 0 20px;
+
+            background-color: rgb(168, 38, 255);
+
+            color: white;
+
+            font-weight: 500;
+
+            cursor: pointer;
+
+            border-radius: 10px;
+
+            box-shadow:
+                5px 5px 0px
+                rgb(140, 32, 212);
+
+            transition-duration: .3s;
+        }
+
+        .Btn .svg {
+            width: 14px;
+
+            position: absolute;
+
+            right: 0;
+
+            margin-right: 18px;
+
+            fill: white;
+
+            transition-duration: .3s;
+        }
+
+        .Btn:hover {
+            color: transparent;
+        }
+
+        .Btn:hover .svg {
+            right: 43%;
+
+            margin: 0;
+
+            padding: 0;
+
+            border: none;
+
+            transition-duration: .3s;
+        }
+
+        .Btn:active {
+            transform:
+                translate(3px, 3px);
+
+            transition-duration: .3s;
+
+            box-shadow:
+                2px 2px 0px
+                rgb(140, 32, 212);
+        }
+
+
+        /* ================= EDITOR ================= */
+
+        .editor {
+            height: calc(100vh - 64px);
+
+            display: grid;
+
+            grid-template-columns: 210px 1fr;
+
+            gap: 12px;
+
+            padding: 12px;
+
+            overflow: hidden;
+        }
+
+
+        /* ================= SIDEBAR ================= */
+
+        .sidebar {
+            background:
+                rgba(15,15,15,0.9);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.1);
+
+            border-radius: 16px;
+
+            padding: 12px;
+
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            margin: 5px 0 12px;
+            color: #00f5d4;
+        }
+
+        .tool,
+        .upload-btn {
+            width: 100%;
+
+            min-height: 42px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: #242222;
+
+            color: white;
+
+            margin-bottom: 8px;
+
+            padding: 10px;
+
+            cursor: pointer;
+
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            font-size: 14px;
+
+            transition: .2s;
+        }
+
+        .tool:hover {
+            background: #9b5de5;
+        }
+
+        .upload-btn {
+            background: #00bbf9;
+        }
+
+        .upload-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .tool svg,
+        .upload-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        #upload {
+            display: none;
+        }
+
+
+        /* ================= ÁREA PRINCIPAL ================= */
+
+        .main {
+            min-width: 0;
+
+            display: grid;
+
+            grid-template-rows:
+                1fr auto;
+
+            gap: 12px;
+
+            overflow: hidden;
+        }
+
+
+        /* ================= CANVAS ================= */
+
+        .canvas-area {
+            position: relative;
+
+            min-height: 0;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            background:
+                rgba(10,10,10,0.82);
+
+            border:
+                1px solid
+                rgba(255,255,255,0.1);
+
+            border-radius: 16px;
+
+            overflow: hidden;
+
+            padding: 15px;
+        }
+
+        #canvas-wrapper {
+            position: relative;
+
+            display: inline-block;
+
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        canvas {
+            display: block;
+
+            max-width: 100%;
+            max-height: calc(100vh - 250px);
+
+            object-fit: contain;
+
+            box-shadow:
+                0 0 30px
+                rgba(0,0,0,.7);
+        }
+
+
+        /* ================= TEXTO ================= */
+
+        .text-layer {
+            position: absolute;
+
+            left: 50%;
+            top: 50%;
+
+            transform:
+                translate(-50%, -50%);
+
+            color: white;
+
+            font-weight: bold;
+
+            font-size: 50px;
+
+            font-family: Arial;
+
+            white-space: nowrap;
+
+            cursor: grab;
+
+            user-select: none;
+
+            touch-action: none;
+
+            z-index: 10;
+
+            text-shadow:
+                -2px -2px 0 #000,
+                 2px -2px 0 #000,
+                -2px  2px 0 #000,
+                 2px  2px 0 #000;
+        }
+
+        .text-layer:active {
+            cursor: grabbing;
+        }
+
+        .text-layer.selected {
+            outline:
+                2px dashed
+                #00f5d4;
+
+            outline-offset: 6px;
+        }
+
+
+        /* ================= TELA VAZIA ================= */
+
+        .empty {
+            text-align: center;
+            color: #aaa;
+        }
+
+        .empty svg {
+            width: 55px;
+            height: 55px;
+            color: #00f5d4;
+        }
+
+        .empty h2 {
+            color: #00f5d4;
+        }
+
+
+        /* ================= CONTROLES ================= */
+
+        .controls {
+            background:
+                rgba(15,15,15,.92);
+
+            border:
+                1px solid
+                rgba(255,255,255,.1);
+
+            border-radius: 16px;
+
+            padding: 14px;
+        }
+
+        .controls-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 15px;
+        }
+
+        .control label {
+            display: block;
+
+            color: #aaa;
+
+            font-size: 13px;
+
+            margin-bottom: 6px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #00f5d4;
+        }
+
+
+        /* ================= PAINEL TEXTO ================= */
+
+        .text-panel {
+            position: fixed;
+
+            top: 75px;
+            right: 20px;
+
+            width: 330px;
+
+            padding: 18px;
+
+            background:
+                rgba(18,18,18,.98);
+
+            border:
+                1px solid
+                rgba(255,255,255,.12);
+
+            border-radius: 16px;
+
+            backdrop-filter: blur(20px);
+
+            box-shadow:
+                0 20px 50px
+                rgba(0,0,0,.5);
+
+            z-index: 100;
+
+            display: none;
+        }
+
+        .text-panel.active {
+            display: block;
+        }
+
+        .text-panel h3 {
+            margin: 0 0 15px;
+            color: #00f5d4;
+        }
+
+        .text-panel label {
+            display: block;
+
+            margin-top: 12px;
+            margin-bottom: 6px;
+
+            color: #aaa;
+
+            font-size: 13px;
+        }
+
+        .text-panel input[type="text"],
+        .text-panel select {
+            width: 100%;
+
+            background: #242222;
+
+            color: white;
+
+            border:
+                1px solid #444;
+
+            border-radius: 9px;
+
+            padding: 11px;
+
+            outline: none;
+        }
+
+        .text-panel input[type="text"]:focus,
+        .text-panel select:focus {
+            border-color: #00f5d4;
+        }
+
+        .text-panel input[type="color"] {
+            width: 100%;
+            height: 42px;
+
+            border: none;
+
+            border-radius: 9px;
+
+            cursor: pointer;
+
+            background: transparent;
+        }
+
+        .panel-buttons {
+            display: flex;
+            gap: 10px;
+
+            margin-top: 18px;
+        }
+
+
+        /* ================= BOTÕES PAINEL ================= */
+
+        .action {
+            border: none;
+
+            padding: 10px 14px;
+
+            border-radius: 9px;
+
+            background: #242222;
+
+            color: white;
+
+            cursor: pointer;
+
+            font-weight: bold;
+
+            transition: .2s;
+        }
+
+        .action:hover {
+            background: #f15bb5;
+        }
+
+        .panel-buttons button {
+            flex: 1;
+        }
+
+
+        /* ================= CELULAR ================= */
+
+        @media (max-width: 800px) {
+
+            body {
+                overflow: auto;
+            }
+
+            .editor {
+                height: auto;
+
+                min-height:
+                    calc(100vh - 64px);
+
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                display: flex;
+
+                gap: 8px;
+
+                overflow-x: auto;
+
+                overflow-y: hidden;
+            }
+
+            .sidebar h3 {
+                display: none;
+            }
+
+            .tool,
+            .upload-btn {
+                min-width: max-content;
+                width: auto;
+            }
+
+            .main {
+                min-height: 550px;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .text-panel {
+                left: 10px;
+                right: 10px;
+
+                top: 72px;
+
+                width: auto;
+            }
+
+            .logo {
+                font-size: 14px;
+            }
+
+            .Btn {
+                width: 45px;
+                padding: 0;
+                color: transparent;
+            }
+
+            .Btn .svg {
+                right: 50%;
+                transform: translateX(50%);
+                margin: 0;
+            }
+
+            .top-actions {
+                gap: 10px;
+            }
+
+        }
+
+    </style>
+</head>
+
+<body>
+
+
+    <!-- ================= FUNDO ================= -->
+
+    <svg
+        class="bg-animado"
+        preserveAspectRatio="xMidYMid slice"
+        viewBox="10 10 80 80"
+    >
+
+        <path
+            fill="#9b5de5"
+            class="out-top"
+            d="M37-5C25.1-14.7,5.7-19.1-9.2-10-28.5,1.8-32.7,31.1-19.8,49c15.5,21.5,52.6,22,67.2,2.3C59.4,35,53.7,8.5,37-5Z"
+        />
+
+        <path
+            fill="#f15bb5"
+            class="in-top"
+            d="M20.6,4.1C11.6,1.5-1.9,2.5-8,11.2-16.3,23.1-8.2,45.6,7.4,50S42.1,38.9,41,24.5C40.2,14.1,29.4,6.6,20.6,4.1Z"
+        />
+
+        <path
+            fill="#00bbf9"
+            class="out-bottom"
+            d="M105.9,48.6c-12.4-8.2-29.3-4.8-39.4.8-23.4,12.8-37.7,51.9-19.1,74.1s63.9,15.3,76-5.6c7.6-13.3,1.8-31.1-2.3-43.8C117.6,63.3,114.7,54.3,105.9,48.6Z"
+        />
+
+        <path
+            fill="#00f5d4"
+            class="in-bottom"
+            d="M102,67.1c-9.6-6.1-22-3.1-29.5,2-15.4,10.7-19.6,37.5-7.6,47.8s35.9,3.9,44.5-12.5C115.5,92.6,113.9,74.6,102,67.1Z"
+        />
+
+    </svg>
+
+
+    <!-- ================= TOPO ================= -->
+
+    <header>
+
+        <div class="logo">
+
+            <i data-lucide="wand-sparkles"></i>
+
+            MITOSHI EDITOR
+
+        </div>
+
+
+        <div class="top-actions">
+
+
+            <!-- BOTÃO TEXTO -->
+
+            <button
+                class="Btn"
+                onclick="abrirPainelTexto()"
+            >
+
+                Texto
+
+                <svg
+                    class="svg"
+                    viewBox="0 0 512 512"
+                >
+
+                    <path
+                        d="M96 32v96h64V96h64v320h-64v64h192v-64h-64V96h64v32h64V32H96z"
+                    />
+
+                </svg>
+
+            </button>
+
+
+            <!-- BOTÃO BAIXAR -->
+
+            <button
+                class="Btn"
+                onclick="baixar()"
+            >
+
+                Baixar
+
+                <svg
+                    class="svg"
+                    viewBox="0 0 512 512"
+                >
+
+                    <path
+                        d="M256 0v320l96-96 45 45-173 173L51 269l45-45 96 96V0h64zM64 448v64h384v-64H64z"
+                    />
+
+                </svg>
+
+            </button>
+
+
+        </div>
+
+    </header>
+
+
+    <!-- ================= PAINEL DO TEXTO ================= -->
+
+    <div
+        class="text-panel"
+        id="textPanel"
+    >
+
+        <h3>Editar texto</h3>
+
+
+        <label>Texto</label>
+
+        <input
+            type="text"
+            id="textInput"
+            placeholder="Digite seu texto..."
+        >
+
+
+        <label>Tamanho</label>
+
+        <input
+            type="range"
+            id="textSize"
+            min="10"
+            max="200"
+            value="50"
+        >
+
+
+        <label>Cor</label>
+
+        <input
+            type="color"
+            id="textColor"
+            value="#ffffff"
+        >
+
+
+        <label>Fonte</label>
+
+        <select id="textFont">
+
+            <option value="Arial">
+                Arial
+            </option>
+
+            <option value="Impact">
+                Impact
+            </option>
+
+            <option value="Georgia">
+                Georgia
+            </option>
+
+            <option value="Courier New">
+                Courier New
+            </option>
+
+        </select>
+
+
+        <div class="panel-buttons">
+
+            <button
+                class="action"
+                onclick="criarOuAtualizarTexto()"
+            >
+                Aplicar
+            </button>
+
+
+            <button
+                class="action"
+                onclick="removerTexto()"
+            >
+                Remover
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= EDITOR ================= -->
+
+    <div class="editor">
+
+
+        <!-- ================= SIDEBAR ================= -->
+
+        <aside class="sidebar">
+
+            <h3>Ferramentas</h3>
+
+
+            <label
+                class="upload-btn"
+                for="upload"
+            >
+
+                <i data-lucide="upload"></i>
+
+                Enviar imagem
+
+            </label>
+
+
+            <input
+                type="file"
+                id="upload"
+                accept="image/*"
+            >
+
+
+            <button
+                class="tool"
+                onclick="girar(-90)"
+            >
+
+                <i data-lucide="rotate-ccw"></i>
+
+                Girar esquerda
+
+            </button>
+
+
+            <button
+                class="tool"
+                onclick="girar(90)"
+            >
+
+                <i data-lucide="rotate-cw"></i>
+
+                Girar direita
+
+            </button>
+
+
+            <button
+                class="tool"
+                onclick="espelhar()"
+            >
+
+                <i data-lucide="flip-horizontal-2"></i>
+
+                Espelhar
+
+            </button>
+
+
+            <button
+                class="tool"
+                onclick="pretoBranco()"
+            >
+
+                <i data-lucide="circle"></i>
+
+                Preto e branco
+
+            </button>
+
+
+            <button
+                class="tool"
+                onclick="resetar()"
+            >
+
+                <i data-lucide="refresh-cw"></i>
+
+                Resetar
+
+            </button>
+
+
+        </aside>
+
+
+        <!-- ================= ÁREA PRINCIPAL ================= -->
+
+        <main class="main">
+
+
+            <div class="canvas-area">
+
+
+                <div
+                    class="empty"
+                    id="empty"
+                >
+
+                    <i data-lucide="image-plus"></i>
+
+                    <h2>Seu editor está pronto</h2>
+
+                    <p>
+                        Envie uma imagem para começar.
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="canvas-wrapper"
+                    style="display:none"
+                >
+
+                    <canvas id="canvas"></canvas>
+
+
+                    <!-- TEXTO ARRASTÁVEL -->
+
+                    <div
+                        id="textLayer"
+                        class="text-layer"
+                        style="display:none"
+                    ></div>
+
+
+                </div>
+
+
+            </div>
+
+
+            <!-- ================= CONTROLES ================= -->
+
+            <div class="controls">
+
+
+                <div class="controls-grid">
+
+
+                    <div class="control">
+
+                        <label>
+                            Brilho
+                        </label>
+
+                        <input
+                            type="range"
+                            id="brightness"
+                            min="0"
+                            max="200"
+                            value="100"
+                        >
+
+                    </div>
+
+
+                    <div class="control">
+
+                        <label>
+                            Contraste
+                        </label>
+
+                        <input
+                            type="range"
+                            id="contrast"
+                            min="0"
+                            max="200"
+                            value="100"
+                        >
+
+                    </div>
+
+
+                    <div class="control">
+
+                        <label>
+                            Saturação
+                        </label>
+
+                        <input
+                            type="range"
+                            id="saturation"
+                            min="0"
+                            max="200"
+                            value="100"
+                        >
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </main>
+
+
+    </div>
+
+
+    <!-- ================= JAVASCRIPT ================= -->
+
+    <script>
+
+        /* ================= ÍCONES ================= */
+
+        lucide.createIcons();
+
+
+        /* ================= ELEMENTOS ================= */
+
+        const canvas =
+            document.getElementById("canvas");
+
+        const ctx =
+            canvas.getContext("2d");
+
+
+        const wrapper =
+            document.getElementById(
+                "canvas-wrapper"
+            );
+
+
+        const empty =
+            document.getElementById("empty");
+
+
+        const upload =
+            document.getElementById("upload");
+
+
+        const textLayer =
+            document.getElementById(
+                "textLayer"
+            );
+
+
+        const textPanel =
+            document.getElementById(
+                "textPanel"
+            );
+
+
+        const brilho =
+            document.getElementById(
+                "brightness"
+            );
+
+
+        const contraste =
+            document.getElementById(
+                "contrast"
+            );
+
+
+        const saturacao =
+            document.getElementById(
+                "saturation"
+            );
+
+
+        const textInput =
+            document.getElementById(
+                "textInput"
+            );
+
+
+        const textSize =
+            document.getElementById(
+                "textSize"
+            );
+
+
+        const textColor =
+            document.getElementById(
+                "textColor"
+            );
+
+
+        const textFont =
+            document.getElementById(
+                "textFont"
+            );
+
+
+        /* ================= VARIÁVEIS ================= */
+
+        let imagem =
+            new Image();
+
+        let original =
+            null;
+
+        let rotacao =
+            0;
+
+        let flip =
+            false;
+
+
+        /* ================= UPLOAD ================= */
+
+        upload.addEventListener(
+            "change",
+            function(e) {
+
+                const arquivo =
+                    e.target.files[0];
+
+                if (!arquivo) return;
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function(event) {
+
+                        imagem =
+                            new Image();
+
+
+                        imagem.onload =
+                            function() {
+
+                                canvas.width =
+                                    imagem.width;
+
+                                canvas.height =
+                                    imagem.height;
+
+
+                                original =
+                                    event.target.result;
+
+
+                                empty.style.display =
+                                    "none";
+
+
+                                wrapper.style.display =
+                                    "inline-block";
+
+
+                                desenhar();
+
+                            };
+
+
+                        imagem.src =
+                            event.target.result;
+
+                    };
+
+
+                reader.readAsDataURL(
+                    arquivo
+                );
+
+            }
+        );
+
+
+        /* ================= DESENHAR ================= */
+
+        function desenhar() {
+
+            if (!imagem.src) return;
+
+
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+
+            ctx.save();
+
+
+            ctx.filter = `
+                brightness(${brilho.value}%)
+                contrast(${contraste.value}%)
+                saturate(${saturacao.value}%)
+            `;
+
+
+            ctx.translate(
+                canvas.width / 2,
+                canvas.height / 2
+            );
+
+
+            ctx.rotate(
+                rotacao *
+                Math.PI /
+                180
+            );
+
+
+            ctx.scale(
+                flip ? -1 : 1,
+                1
+            );
+
+
+            ctx.drawImage(
+                imagem,
+
+                -imagem.width / 2,
+
+                -imagem.height / 2
+            );
+
+
+            ctx.restore();
+
+        }
+
+
+        /* ================= FILTROS ================= */
+
+        brilho.addEventListener(
+            "input",
+            desenhar
+        );
+
+
+        contraste.addEventListener(
+            "input",
+            desenhar
+        );
+
+
+        saturacao.addEventListener(
+            "input",
+            desenhar
+        );
+
+
+        /* ================= GIRAR ================= */
+
+        function girar(valor) {
+
+            if (!imagem.src) return;
+
+            rotacao += valor;
+
+            desenhar();
+
+        }
+
+
+        /* ================= ESPELHAR ================= */
+
+        function espelhar() {
+
+            if (!imagem.src) return;
+
+            flip = !flip;
+
+            desenhar();
+
+        }
+
+
+        /* ================= PRETO E BRANCO ================= */
+
+        function pretoBranco() {
+
+            if (!imagem.src) return;
+
+            saturacao.value = 0;
+
+            desenhar();
+
+        }
+
+
+        /* ================= PAINEL TEXTO ================= */
+
+        function abrirPainelTexto() {
+
+            if (!imagem.src) {
+
+                alert(
+                    "Envie uma imagem primeiro!"
+                );
+
+                return;
+
+            }
+
+
+            textPanel.classList.toggle(
+                "active"
+            );
+
+
+            if (
+                textPanel.classList.contains(
+                    "active"
+                )
+            ) {
+
+                textLayer.classList.add(
+                    "selected"
+                );
+
+            }
+
+        }
+
+
+        /* ================= CRIAR / EDITAR TEXTO ================= */
+
+        function criarOuAtualizarTexto() {
+
+            const texto =
+                textInput.value.trim();
+
+
+            if (!texto) {
+
+                alert(
+                    "Digite um texto!"
+                );
+
+                return;
+
+            }
+
+
+            textLayer.textContent =
+                texto;
+
+
+            textLayer.style.display =
+                "block";
+
+
+            textLayer.classList.add(
+                "selected"
+            );
+
+
+            atualizarTexto();
+
+        }
+
+
+        /* ================= ATUALIZAR TEXTO ================= */
+
+        function atualizarTexto() {
+
+            textLayer.style.fontSize =
+                textSize.value +
+                "px";
+
+
+            textLayer.style.color =
+                textColor.value;
+
+
+            textLayer.style.fontFamily =
+                textFont.value;
+
+        }
+
+
+        textSize.addEventListener(
+            "input",
+            atualizarTexto
+        );
+
+
+        textColor.addEventListener(
+            "input",
+            atualizarTexto
+        );
+
+
+        textFont.addEventListener(
+            "change",
+            atualizarTexto
+        );
+
+
+        textInput.addEventListener(
+            "input",
+            function() {
+
+                if (
+                    textLayer.style.display !==
+                    "none"
+                ) {
+
+                    textLayer.textContent =
+                        textInput.value;
+
+                }
+
+            }
+        );
+
+
+        /* ================= CLICAR NO TEXTO ================= */
+
+        textLayer.addEventListener(
+            "click",
+            function(e) {
+
+                e.stopPropagation();
+
+
+                textPanel.classList.add(
+                    "active"
+                );
+
+
+                textLayer.classList.add(
+                    "selected"
+                );
+
+
+                textInput.value =
+                    textLayer.textContent;
+
+            }
+        );
+
+
+        /* ================= REMOVER TEXTO ================= */
+
+        function removerTexto() {
+
+            textLayer.style.display =
+                "none";
+
+
+            textLayer.textContent =
+                "";
+
+
+            textLayer.classList.remove(
+                "selected"
+            );
+
+
+            textInput.value =
+                "";
+
+        }
+
+
+        /* ================= ARRASTAR ================= */
+
+        let arrastando =
+            false;
+
+        let offsetX =
+            0;
+
+        let offsetY =
+            0;
+
+
+        textLayer.addEventListener(
+            "pointerdown",
+            function(e) {
+
+                e.stopPropagation();
+
+
+                arrastando =
+                    true;
+
+
+                const rect =
+                    textLayer
+                    .getBoundingClientRect();
+
+
+                offsetX =
+                    e.clientX -
+                    rect.left;
+
+
+                offsetY =
+                    e.clientY -
+                    rect.top;
+
+
+                textLayer.setPointerCapture(
+                    e.pointerId
+                );
+
+
+                textLayer.style.cursor =
+                    "grabbing";
+
+
+                textLayer.classList.add(
+                    "selected"
+                );
+
+
+                textPanel.classList.add(
+                    "active"
+                );
+
+            }
+        );
+
+
+        textLayer.addEventListener(
+            "pointermove",
+            function(e) {
+
+                if (!arrastando) return;
+
+
+                const parent =
+                    wrapper
+                    .getBoundingClientRect();
+
+
+                let x =
+                    e.clientX -
+                    parent.left -
+                    offsetX;
+
+
+                let y =
+                    e.clientY -
+                    parent.top -
+                    offsetY;
+
+
+                x =
+                    Math.max(
+                        0,
+                        Math.min(
+                            x,
+                            parent.width -
+                            textLayer.offsetWidth
+                        )
+                    );
+
+
+                y =
+                    Math.max(
+                        0,
+                        Math.min(
+                            y,
+                            parent.height -
+                            textLayer.offsetHeight
+                        )
+                    );
+
+
+                textLayer.style.left =
+                    x + "px";
+
+
+                textLayer.style.top =
+                    y + "px";
+
+
+                textLayer.style.transform =
+                    "none";
+
+            }
+        );
+
+
+        textLayer.addEventListener(
+            "pointerup",
+            pararArrastar
+        );
+
+
+        textLayer.addEventListener(
+            "pointercancel",
+            pararArrastar
+        );
+
+
+        function pararArrastar() {
+
+            arrastando =
+                false;
+
+
+            textLayer.style.cursor =
+                "grab";
+
+        }
+
+
+        /* ================= CLICAR FORA ================= */
+
+        document.addEventListener(
+            "pointerdown",
+            function(e) {
+
+                if (
+                    !textLayer.contains(
+                        e.target
+                    ) &&
+
+                    !textPanel.contains(
+                        e.target
+                    ) &&
+
+                    !e.target.closest(
+                        ".Btn"
+                    )
+                ) {
+
+                    textLayer.classList.remove(
+                        "selected"
+                    );
+
+                }
+
+            }
+        );
+
+
+        /* ================= RESETAR ================= */
+
+        function resetar() {
+
+            if (!original) return;
+
+
+            brilho.value =
+                100;
+
+            contraste.value =
+                100;
+
+            saturacao.value =
+                100;
+
+
+            rotacao =
+                0;
+
+            flip =
+                false;
+
+
+            removerTexto();
+
+
+            imagem =
+                new Image();
+
+
+            imagem.onload =
+                function() {
+
+                    canvas.width =
+                        imagem.width;
+
+                    canvas.height =
+                        imagem.height;
+
+
+                    desenhar();
+
+                };
+
+
+            imagem.src =
+                original;
+
+        }
+
+
+        /* ================= BAIXAR ================= */
+
+        function baixar() {
+
+            if (!imagem.src) {
+
+                alert(
+                    "Envie uma imagem primeiro!"
+                );
+
+                return;
+
+            }
+
+
+            const finalCanvas =
+                document.createElement(
+                    "canvas"
+                );
+
+
+            finalCanvas.width =
+                canvas.width;
+
+
+            finalCanvas.height =
+                canvas.height;
+
+
+            const finalCtx =
+                finalCanvas.getContext(
+                    "2d"
+                );
+
+
+            /* IMAGEM */
+
+            finalCtx.drawImage(
+                canvas,
+                0,
+                0
+            );
+
+
+            /* TEXTO */
+
+            if (
+
+                textLayer.style.display !==
+                "none" &&
+
+                textLayer.textContent
+
+            ) {
+
+                const canvasRect =
+                    canvas.getBoundingClientRect();
+
+
+                const textRect =
+                    textLayer.getBoundingClientRect();
+
+
+                const escalaX =
+                    canvas.width /
+                    canvasRect.width;
+
+
+                const escalaY =
+                    canvas.height /
+                    canvasRect.height;
+
+
+                const x =
+                    (
+                        textRect.left -
+                        canvasRect.left
+                    ) *
+                    escalaX;
+
+
+                const y =
+                    (
+                        textRect.top -
+                        canvasRect.top
+                    ) *
+                    escalaY;
+
+
+                const tamanho =
+                    parseFloat(
+                        getComputedStyle(
+                            textLayer
+                        ).fontSize
+                    ) *
+                    escalaX;
+
+
+                finalCtx.font =
+                    `bold ${tamanho}px ${textFont.value}`;
+
+
+                finalCtx.fillStyle =
+                    textColor.value;
+
+
+                finalCtx.strokeStyle =
+                    "#000";
+
+
+                finalCtx.lineWidth =
+                    Math.max(
+                        2,
+                        tamanho / 20
+                    );
+
+
+                finalCtx.textBaseline =
+                    "top";
+
+
+                finalCtx.strokeText(
+                    textLayer.textContent,
+                    x,
+                    y
+                );
+
+
+                finalCtx.fillText(
+                    textLayer.textContent,
+                    x,
+                    y
+                );
+
+            }
+
+
+            const link =
+                document.createElement(
+                    "a"
+                );
+
+
+            link.download =
+                "mitoshi-editor.png";
+
+
+            link.href =
+                finalCanvas.toDataURL(
+                    "image/png"
+                );
+
+
+            link.click();
+
+        }
+
+    </script>
+
+</body>
+</html>
